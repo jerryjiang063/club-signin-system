@@ -3,14 +3,17 @@ import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
+// 定义路由处理函数的参数类型
+interface RouteParams {
+  params: {
+    id: string;
+  };
+}
+
 // Get a specific plant
-export async function GET(
-  req: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    // 使用 await 解包 params
-    const id = context.params.id;
+    const id = params.id;
     
     const plant = await prisma.plant.findUnique({
       where: { id },
@@ -50,13 +53,10 @@ export async function GET(
 }
 
 // Update a plant (admin only)
-export async function PUT(
-  req: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions);
-    const id = context.params.id;
+    const id = params.id;
 
     // Check if user is admin
     if (!session || session.user.role !== 'ADMIN') {
@@ -66,7 +66,7 @@ export async function PUT(
       );
     }
 
-    const { name, description, imageUrl, waterAmount, waterSchedule, careNotes } = await req.json();
+    const { name, description, imageUrl, waterAmount, waterSchedule, careNotes } = await request.json();
 
     // 检查必填字段
     if (!name || name.trim() === '') {
@@ -107,13 +107,10 @@ export async function PUT(
 }
 
 // Delete a plant (admin only)
-export async function DELETE(
-  req: NextRequest,
-  context: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions);
-    const id = context.params.id;
+    const id = params.id;
 
     // Check if user is admin
     if (!session || session.user.role !== 'ADMIN') {
