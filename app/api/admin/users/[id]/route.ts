@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Get a specific user
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const id = context.params.id;
+    const id = params.id;
     
     console.log(`Fetching user with ID: ${id}`);
     console.log("Session:", session ? "Authenticated" : "Not authenticated");
@@ -61,11 +61,11 @@ export async function GET(
 // Update a user (admin only)
 export async function PUT(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const id = context.params.id;
+    const id = params.id;
     
     console.log(`Updating user with ID: ${id}`);
     console.log("Session:", session ? "Authenticated" : "Not authenticated");
@@ -132,11 +132,11 @@ export async function PUT(
 // Delete a user (admin only)
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const id = context.params.id;
+    const id = params.id;
     
     console.log(`Deleting user with ID: ${id}`);
     console.log("Session:", session ? "Authenticated" : "Not authenticated");
