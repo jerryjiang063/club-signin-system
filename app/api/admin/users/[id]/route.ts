@@ -3,15 +3,12 @@ import { getServerSession } from 'next-auth/next';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
-// 定义路由处理函数的参数类型
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 // Get a specific user
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  const { params } = context;
   try {
     const session = await getServerSession(authOptions);
     const id = params.id;
@@ -63,7 +60,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // Update a user (admin only)
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  const { params } = context;
   try {
     const session = await getServerSession(authOptions);
     const id = params.id;
@@ -131,7 +132,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 // Delete a user (admin only)
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  const { params } = context;
   try {
     const session = await getServerSession(authOptions);
     const id = params.id;
