@@ -1,103 +1,158 @@
+import { LayoutWrapper } from "@/components/layout-wrapper";
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/animations";
 import Image from "next/image";
+import Link from "next/link";
+import { FiArrowRight, FiCheck, FiUsers, FiCalendar } from "react-icons/fi";
+import { GiPlantRoots } from "react-icons/gi";
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <LayoutWrapper>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-background to-secondary/20 px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <div className="container mx-auto flex flex-col items-center gap-8 text-center lg:flex-row lg:text-left">
+          <FadeIn className="flex-1 space-y-6">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+              <span className="block">Growing Together,</span>
+              <span className="block text-primary">Blooming Knowledge</span>
+            </h1>
+            <p className="mx-auto max-w-lg text-lg text-muted-foreground lg:mx-0">
+              Welcome to our In-Class Gardening Club platform. Track plant care, share your gardening journey, and learn together in our green community.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 lg:justify-start">
+              <Link href="/register" className="btn-primary">
+                Join the Club
+              </Link>
+              <Link href="/plants" className="btn-outline">
+                Explore Plants
+              </Link>
+            </div>
+          </FadeIn>
+          <FadeIn className="flex-1" delay={0.2}>
+            <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80 lg:h-96">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent rounded-lg"></div>
+              <Image
+                src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2342&q=80"
+                alt="Plants in a garden"
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
+          </FadeIn>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="bg-background px-4 py-16 sm:px-6 lg:px-8">
+        <div className="container mx-auto">
+          <FadeIn className="mb-12 text-center">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">How Our Club Works</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              A simple and effective way to manage plant care in our community
+            </p>
+          </FadeIn>
+          <StaggerContainer className="grid gap-8 md:grid-cols-3">
+            <StaggerItem>
+              <div className="card h-full">
+                <div className="card-header">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <FiUsers className="h-6 w-6" />
+                  </div>
+                  <h3 className="card-title">Member Check-ins</h3>
+                </div>
+                <div className="card-content">
+                  <p className="text-muted-foreground">
+                    Club members log in daily to check on their assigned plants, water them, and record their progress with notes and photos.
+                  </p>
+                </div>
+              </div>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="card h-full">
+                <div className="card-header">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <GiPlantRoots className="h-6 w-6" />
+                  </div>
+                  <h3 className="card-title">Plant Management</h3>
+                </div>
+                <div className="card-content">
+                  <p className="text-muted-foreground">
+                    Administrators assign specific plants to members, track care history, and ensure all plants receive proper attention.
+                  </p>
+                </div>
+              </div>
+            </StaggerItem>
+            <StaggerItem>
+              <div className="card h-full">
+                <div className="card-header">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <FiCalendar className="h-6 w-6" />
+                  </div>
+                  <h3 className="card-title">Care Reminders</h3>
+                </div>
+                <div className="card-content">
+                  <p className="text-muted-foreground">
+                    Automatic email reminders ensure members never forget their plant care responsibilities, sent a day before and on the scheduled day.
+                  </p>
+                </div>
+              </div>
+            </StaggerItem>
+          </StaggerContainer>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="bg-secondary/30 px-4 py-16 sm:px-6 lg:px-8">
+        <div className="container mx-auto">
+          <FadeIn className="mb-12 text-center">
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Benefits of Our Platform</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Why our gardening club platform makes plant care easier and more enjoyable
+            </p>
+          </FadeIn>
+          <div className="max-w-4xl mx-auto">
+            <StaggerContainer className="grid gap-6 md:grid-cols-2">
+              {[
+                "Track plant growth and health over time",
+                "Share knowledge and tips with fellow gardeners",
+                "Never forget to water with timely reminders",
+                "Build a visual record of your gardening journey",
+                "Learn about different plant species and care techniques",
+                "Contribute to our classroom's green environment",
+              ].map((benefit, index) => (
+                <StaggerItem key={index}>
+                  <div className="flex items-start gap-3">
+                    <div className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <FiCheck className="h-3 w-3" />
+                    </div>
+                    <p>{benefit}</p>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-primary px-4 py-16 text-primary-foreground sm:px-6 lg:px-8">
+        <FadeIn className="container mx-auto text-center">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to Join Our Gardening Community?</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg opacity-90">
+            Sign up today and start your plant care journey with our in-class gardening club.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <Link href="/register" className="inline-flex items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-medium text-primary transition-colors hover:bg-white/90">
+              Get Started
+              <FiArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+            <Link href="/about" className="inline-flex items-center justify-center rounded-md border border-white/30 px-6 py-3 text-sm font-medium transition-colors hover:bg-white/10">
+              Learn More
+            </Link>
+          </div>
+        </FadeIn>
+      </section>
+    </LayoutWrapper>
   );
 }
