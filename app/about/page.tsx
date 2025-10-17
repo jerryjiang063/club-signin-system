@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/animations";
 import Image from "next/image";
-import { FiUsers, FiAward, FiHeart, FiEdit2 } from "react-icons/fi";
-import { GiPlantRoots, GiPlantSeed, GiSprout } from "react-icons/gi";
+import { FiUsers, FiHeart, FiEdit2, FiCheckCircle, FiAlertCircle } from "react-icons/fi";
+import { GiSprout } from "react-icons/gi";
 import { motion } from "framer-motion";
 
 export default function AboutPage() {
@@ -16,6 +16,9 @@ export default function AboutPage() {
   // 编辑状态
   const [isEditingMission, setIsEditingMission] = useState(false);
   const [isEditingHistory, setIsEditingHistory] = useState(false);
+  const [isSavingMission, setIsSavingMission] = useState(false);
+  const [isSavingHistory, setIsSavingHistory] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{type: "success" | "error", text: string} | null>(null);
   
   // 内容状态
   const [missionContent, setMissionContent] = useState({
@@ -27,19 +30,110 @@ export default function AboutPage() {
     imageUrl: "https://images.unsplash.com/photo-1604762524889-3e2fcc145683?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2671&q=80",
     text1: "The In-Class Gardening Club was founded in 2025 as a brand-new student initiative. Although we're just getting started, our goal is clear — to create a small indoor garden that brings life, color, and calmness into our classroom. This is our first year, and we're excited to grow together — both our plants and our community."
   });
+
+  // 加载数据
+  useEffect(() => {
+    const loadAboutData = async () => {
+      try {
+        // 加载使命内容
+        const missionResponse = await fetch("/api/site-content/about_mission");
+        if (missionResponse.ok) {
+          const data = await missionResponse.json();
+          if (data.content && data.content.content) {
+            try {
+              const parsed = JSON.parse(data.content.content);
+              setMissionContent(parsed);
+            } catch (e) {
+              // 如果不是JSON，使用默认值
+            }
+          }
+        }
+
+        // 加载历史内容
+        const historyResponse = await fetch("/api/site-content/about_history");
+        if (historyResponse.ok) {
+          const data = await historyResponse.json();
+          if (data.content && data.content.content) {
+            try {
+              const parsed = JSON.parse(data.content.content);
+              setHistoryContent(parsed);
+            } catch (e) {
+              // 如果不是JSON，使用默认值
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading about data:", error);
+      }
+    };
+
+    loadAboutData();
+  }, []);
   
   // 保存使命内容
   const saveMissionContent = async () => {
-    // 这里应该调用API保存更新的内容
-    console.log("Saving mission content:", missionContent);
-    setIsEditingMission(false);
+    setIsSavingMission(true);
+    setSaveMessage(null);
+    try {
+      const response = await fetch("/api/site-content/about_mission", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "Our Mission",
+          content: JSON.stringify(missionContent),
+          imageUrl: null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save mission content");
+      }
+
+      setSaveMessage({ type: "success", text: "Mission content saved successfully!" });
+      setIsEditingMission(false);
+      
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error) {
+      console.error("Error saving mission content:", error);
+      setSaveMessage({ type: "error", text: "Failed to save mission content" });
+    } finally {
+      setIsSavingMission(false);
+    }
   };
   
   // 保存历史内容
   const saveHistoryContent = async () => {
-    // 这里应该调用API保存更新的内容
-    console.log("Saving history content:", historyContent);
-    setIsEditingHistory(false);
+    setIsSavingHistory(true);
+    setSaveMessage(null);
+    try {
+      const response = await fetch("/api/site-content/about_history", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "Our History",
+          content: JSON.stringify(historyContent),
+          imageUrl: null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save history content");
+      }
+
+      setSaveMessage({ type: "success", text: "History content saved successfully!" });
+      setIsEditingHistory(false);
+      
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error) {
+      console.error("Error saving history content:", error);
+      setSaveMessage({ type: "error", text: "Failed to save history content" });
+    } finally {
+      setIsSavingHistory(false);
+    }
   };
 
   return (
@@ -51,6 +145,25 @@ export default function AboutPage() {
             Learn more about our mission, history, and the people behind our in-class gardening initiative.
           </p>
         </FadeIn>
+
+        {saveMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`mb-6 flex items-center gap-2 rounded-md p-4 text-sm ${
+              saveMessage.type === "success"
+                ? "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+            }`}
+          >
+            {saveMessage.type === "success" ? (
+              <FiCheckCircle className="h-4 w-4" />
+            ) : (
+              <FiAlertCircle className="h-4 w-4" />
+            )}
+            <p>{saveMessage.text}</p>
+          </motion.div>
+        )}
 
         {/* Mission Section */}
         <section className="mb-16">
@@ -103,8 +216,9 @@ export default function AboutPage() {
                     <button 
                       onClick={saveMissionContent}
                       className="btn-primary"
+                      disabled={isSavingMission}
                     >
-                      Save Changes
+                      {isSavingMission ? "Saving..." : "Save Changes"}
                     </button>
                   </div>
                 </div>
@@ -203,8 +317,9 @@ export default function AboutPage() {
                     <button 
                       onClick={saveHistoryContent}
                       className="btn-primary"
+                      disabled={isSavingHistory}
                     >
-                      Save Changes
+                      {isSavingHistory ? "Saving..." : "Save Changes"}
                     </button>
                   </div>
                 </div>
