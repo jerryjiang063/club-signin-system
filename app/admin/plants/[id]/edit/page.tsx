@@ -101,6 +101,15 @@ export default function EditPlantPage() {
 
       console.log("Plant update response status:", response.status);
       
+      // 检查Content-Type是否为JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.error("Response is not JSON, content-type:", contentType);
+        const text = await response.text();
+        console.error("Response text:", text.substring(0, 200));
+        throw new Error("Server returned an invalid response. Please make sure you're logged in as admin.");
+      }
+      
       // 获取响应数据
       const responseData = await response.json();
       console.log("Plant update response data:", responseData);
@@ -108,6 +117,7 @@ export default function EditPlantPage() {
       // 检查响应状态
       if (!response.ok) {
         setError(responseData.error || "Failed to update plant");
+        setSubmitting(false);
         return;
       }
       
