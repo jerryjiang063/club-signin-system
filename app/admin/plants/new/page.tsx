@@ -73,6 +73,11 @@ export default function NewPlantPage() {
 
       console.log("Plant creation response status:", response.status);
       
+      // 检查是否是413错误（请求体太大）
+      if (response.status === 413) {
+        throw new Error("Image is too large! Please upload a smaller image or crop to a smaller area. Recommended: keep images under 800KB.");
+      }
+      
       // 检查Content-Type是否为JSON
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {

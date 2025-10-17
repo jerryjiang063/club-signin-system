@@ -107,7 +107,29 @@ export function ImageUploadCrop({ value, onChange, aspectRatio = 4 / 3 }: ImageU
       Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
     );
 
-    return canvas.toDataURL("image/jpeg", 0.9);
+    // 限制最大尺寸为 1200px，保持宽高比
+    const MAX_WIDTH = 1200;
+    const MAX_HEIGHT = 1200;
+    let finalWidth = pixelCrop.width;
+    let finalHeight = pixelCrop.height;
+
+    if (finalWidth > MAX_WIDTH || finalHeight > MAX_HEIGHT) {
+      const ratio = Math.min(MAX_WIDTH / finalWidth, MAX_HEIGHT / finalHeight);
+      finalWidth = Math.round(finalWidth * ratio);
+      finalHeight = Math.round(finalHeight * ratio);
+
+      const resizeCanvas = document.createElement("canvas");
+      resizeCanvas.width = finalWidth;
+      resizeCanvas.height = finalHeight;
+      const resizeCtx = resizeCanvas.getContext("2d");
+      
+      if (resizeCtx) {
+        resizeCtx.drawImage(canvas, 0, 0, finalWidth, finalHeight);
+        return resizeCanvas.toDataURL("image/jpeg", 0.85);
+      }
+    }
+
+    return canvas.toDataURL("image/jpeg", 0.85);
   };
 
   const handleCropConfirm = async () => {
@@ -115,6 +137,24 @@ export function ImageUploadCrop({ value, onChange, aspectRatio = 4 / 3 }: ImageU
 
     try {
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels, rotation);
+      
+      // 检查最终图片大小（Base64字符串长度）
+      const sizeInBytes = (croppedImage.length * 3) / 4;
+      const sizeInMB = sizeInBytes / (1024 * 1024);
+      
+      console.log(`Final image size: ${sizeInMB.toFixed(2)} MB`);
+      
+      // 如果超过800KB，警告用户
+      if (sizeInMB > 0.8) {
+        const confirmed = confirm(
+          `The image size is ${sizeInMB.toFixed(2)} MB. This might cause upload issues. ` +
+          `Consider cropping to a smaller area or using a smaller original image. Continue anyway?`
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+      
       onChange(croppedImage);
       setIsCropping(false);
       setImageSrc(null);
@@ -191,7 +231,10 @@ export function ImageUploadCrop({ value, onChange, aspectRatio = 4 / 3 }: ImageU
                 Click to upload plant image
               </p>
               <p className="text-xs text-muted-foreground">
-                PNG, JPG up to 5MB
+                PNG, JPG • Recommended: under 2MB
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Large images will be automatically resized
               </p>
             </label>
           )}
