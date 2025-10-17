@@ -214,11 +214,18 @@ function ContentEditContent() {
       const data = await response.json();
       
       // Update the content item in the state
-      setContentItems(prev => 
-        prev.map(item => 
-          item.key === key ? data.content : item
-        )
-      );
+      setContentItems(prev => {
+        const existingIndex = prev.findIndex(item => item.key === key);
+        if (existingIndex >= 0) {
+          // Update existing item
+          const newItems = [...prev];
+          newItems[existingIndex] = data.content;
+          return newItems;
+        } else {
+          // Add new item
+          return [...prev, data.content];
+        }
+      });
 
       setSaveStatus({
         key,

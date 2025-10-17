@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/animations";
 import Image from "next/image";
@@ -5,7 +8,40 @@ import Link from "next/link";
 import { FiArrowRight, FiCheck, FiUsers, FiCalendar } from "react-icons/fi";
 import { GiPlantRoots } from "react-icons/gi";
 
+interface Plant {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+}
+
 export default function Home() {
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchPlants = async () => {
+      try {
+        const response = await fetch("/api/plants");
+        const data = await response.json();
+        const plantsWithImages = data.plants.filter((p: Plant) => p.imageUrl);
+        setPlants(plantsWithImages);
+      } catch (error) {
+        console.error("Error fetching plants:", error);
+      }
+    };
+
+    fetchPlants();
+  }, []);
+
+  useEffect(() => {
+    if (plants.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentImageIndex((prev) => (prev + 1) % plants.length);
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [plants.length]);
   return (
     <LayoutWrapper>
       {/* Hero Section */}
@@ -30,14 +66,33 @@ export default function Home() {
           </FadeIn>
           <FadeIn className="flex-1" delay={0.2}>
             <div className="relative h-64 w-full overflow-hidden rounded-lg sm:h-80 lg:h-96">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent rounded-lg"></div>
-              <Image
-                src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2342&q=80"
-                alt="Plants in a garden"
-                fill
-                className="object-cover"
-                priority
-              />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-transparent rounded-lg z-10"></div>
+              {plants.length > 0 ? (
+                plants.map((plant, index) => (
+                  <div
+                    key={plant.id}
+                    className={`absolute inset-0 transition-opacity duration-1000 ${
+                      index === currentImageIndex ? "opacity-100" : "opacity-0"
+                    }`}
+                  >
+                    <Image
+                      src={plant.imageUrl || ""}
+                      alt={plant.name}
+                      fill
+                      className="object-cover"
+                      priority={index === 0}
+                    />
+                  </div>
+                ))
+              ) : (
+                <Image
+                  src="https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2342&q=80"
+                  alt="Plants in a garden"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              )}
             </div>
           </FadeIn>
         </div>

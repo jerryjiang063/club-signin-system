@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { FadeIn } from "@/components/animations";
-import { FiSend, FiMapPin, FiMail, FiPhone, FiAlertCircle, FiCheckCircle, FiEdit2 } from "react-icons/fi";
+import { FiSend, FiMapPin, FiMail, FiAlertCircle, FiCheckCircle, FiEdit2 } from "react-icons/fi";
 import { motion } from "framer-motion";
 
 export default function ContactPage() {
@@ -24,17 +24,12 @@ export default function ContactPage() {
   
   // 联系信息
   const [contactInfo, setContactInfo] = useState({
-    address: "123 School Street, Vancouver, BC V6B 1A9",
-    email: "gardening.club@school.edu",
-    phone: "+1 (604) 555-1234"
+    address: "Room 320",
+    email: "inclassgardening@outlook.com"
   });
   
   // 开放时间
-  const [clubHours, setClubHours] = useState({
-    weekdays: "3:00 PM - 5:00 PM",
-    saturday: "10:00 AM - 2:00 PM",
-    sunday: "Closed"
-  });
+  const [clubHours, setClubHours] = useState("Friday Lunch Break");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,7 +119,7 @@ export default function ContactPage() {
                     id="name"
                     type="text"
                     className="input w-full"
-                    placeholder="John Doe"
+                    placeholder="Please enter your full name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -138,7 +133,7 @@ export default function ContactPage() {
                     id="email"
                     type="email"
                     className="input w-full"
-                    placeholder="john@example.com"
+                    placeholder="Please enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -242,26 +237,6 @@ export default function ContactPage() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <FiPhone className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium">Phone</h3>
-                    {isEditingContact ? (
-                      <input
-                        type="text"
-                        className="input w-full mt-1"
-                        value={contactInfo.phone}
-                        onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
-                      />
-                    ) : (
-                      <p className="text-muted-foreground">
-                        {contactInfo.phone}
-                      </p>
-                    )}
-                  </div>
-                </div>
                 
                 {isEditingContact && (
                   <div className="flex justify-end mt-4">
@@ -293,33 +268,12 @@ export default function ContactPage() {
               <div className="space-y-4">
                 {isEditingHours ? (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span>Monday - Friday</span>
-                      <input
-                        type="text"
-                        className="input w-40"
-                        value={clubHours.weekdays}
-                        onChange={(e) => setClubHours({...clubHours, weekdays: e.target.value})}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Saturday</span>
-                      <input
-                        type="text"
-                        className="input w-40"
-                        value={clubHours.saturday}
-                        onChange={(e) => setClubHours({...clubHours, saturday: e.target.value})}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Sunday</span>
-                      <input
-                        type="text"
-                        className="input w-40"
-                        value={clubHours.sunday}
-                        onChange={(e) => setClubHours({...clubHours, sunday: e.target.value})}
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      className="input w-full"
+                      value={clubHours}
+                      onChange={(e) => setClubHours(e.target.value)}
+                    />
                     <div className="flex justify-end mt-4">
                       <button 
                         onClick={saveClubHours}
@@ -330,20 +284,9 @@ export default function ContactPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Monday - Friday</span>
-                      <span className="font-medium">{clubHours.weekdays}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Saturday</span>
-                      <span className="font-medium">{clubHours.saturday}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Sunday</span>
-                      <span className="font-medium">{clubHours.sunday}</span>
-                    </div>
-                  </div>
+                  <p className="text-muted-foreground">
+                    {clubHours}
+                  </p>
                 )}
               </div>
             </div>

@@ -20,14 +20,12 @@ export default function AboutPage() {
   // 内容状态
   const [missionContent, setMissionContent] = useState({
     imageUrl: "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    text1: "The In-Class Gardening Club was founded with a simple but powerful mission: to connect students with nature, foster responsibility, and create a greener learning environment.",
-    text2: "We believe that by caring for plants, students develop patience, responsibility, and an appreciation for the natural world. Our club provides hands-on experience with plant care while building community through shared responsibility."
+    text1: "The In-Class Gardening Club aims to bring nature into our learning space — turning our classroom into a place of growth, creativity, and calm. We believe that caring for plants helps us care for ourselves and our community. Through hands-on gardening, we learn responsibility, teamwork, and environmental awareness while making our classroom greener and more inspiring every day."
   });
   
   const [historyContent, setHistoryContent] = useState({
     imageUrl: "https://images.unsplash.com/photo-1604762524889-3e2fcc145683?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2671&q=80",
-    text1: "The In-Class Gardening Club began in 2023 as a small initiative with just three plants in a single classroom. What started as a simple project to bring more greenery into our learning environment quickly blossomed into something much larger.",
-    text2: "Today, our club manages over 30 plants across multiple classrooms, with dedicated members ensuring each plant receives the care it needs. Our digital platform has transformed how we coordinate care and track growth, making our gardening club more efficient and engaging for all members."
+    text1: "The In-Class Gardening Club was founded in 2025 as a brand-new student initiative. Although we're just getting started, our goal is clear — to create a small indoor garden that brings life, color, and calmness into our classroom. This is our first year, and we're excited to grow together — both our plants and our community."
   });
   
   // 保存使命内容
@@ -101,11 +99,6 @@ export default function AboutPage() {
                     value={missionContent.text1}
                     onChange={(e) => setMissionContent({...missionContent, text1: e.target.value})}
                   />
-                  <textarea
-                    className="input w-full min-h-[100px]"
-                    value={missionContent.text2}
-                    onChange={(e) => setMissionContent({...missionContent, text2: e.target.value})}
-                  />
                   <div className="flex justify-end">
                     <button 
                       onClick={saveMissionContent}
@@ -116,14 +109,9 @@ export default function AboutPage() {
                   </div>
                 </div>
               ) : (
-                <>
-                  <p className="text-muted-foreground mb-4">
-                    {missionContent.text1}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {missionContent.text2}
-                  </p>
-                </>
+                <p className="text-muted-foreground">
+                  {missionContent.text1}
+                </p>
               )}
             </FadeIn>
           </div>
@@ -211,11 +199,6 @@ export default function AboutPage() {
                     value={historyContent.text1}
                     onChange={(e) => setHistoryContent({...historyContent, text1: e.target.value})}
                   />
-                  <textarea
-                    className="input w-full min-h-[100px]"
-                    value={historyContent.text2}
-                    onChange={(e) => setHistoryContent({...historyContent, text2: e.target.value})}
-                  />
                   <div className="flex justify-end">
                     <button 
                       onClick={saveHistoryContent}
@@ -226,14 +209,9 @@ export default function AboutPage() {
                   </div>
                 </div>
               ) : (
-                <>
-                  <p className="text-muted-foreground mb-4">
-                    {historyContent.text1}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {historyContent.text2}
-                  </p>
-                </>
+                <p className="text-muted-foreground">
+                  {historyContent.text1}
+                </p>
               )}
             </FadeIn>
             <FadeIn delay={0.2} className="order-1 md:order-2">
