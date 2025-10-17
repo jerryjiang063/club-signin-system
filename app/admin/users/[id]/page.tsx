@@ -200,10 +200,17 @@ function EditUserContent() {
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 flex items-center gap-2 rounded-md bg-green-50 p-4 text-sm text-green-600 dark:bg-green-900/30 dark:text-green-200"
+            className="mb-6 flex flex-col gap-2 rounded-md bg-green-50 p-4 text-sm text-green-600 dark:bg-green-900/30 dark:text-green-200"
           >
-            <FiCheckCircle className="h-4 w-4" />
-            <p>User updated successfully!</p>
+            <div className="flex items-center gap-2">
+              <FiCheckCircle className="h-4 w-4" />
+              <p className="font-medium">User updated successfully!</p>
+            </div>
+            {role !== user?.role && (
+              <p className="text-xs pl-6">
+                Role changed. The user will see the new permissions after refreshing their page.
+              </p>
+            )}
           </motion.div>
         )}
 
@@ -262,6 +269,10 @@ function EditUserContent() {
                 <option value="MEMBER">Member</option>
                 <option value="ADMIN">Admin</option>
               </select>
+              <p className="text-xs text-muted-foreground">
+                <strong>Admin</strong> can access admin panel and manage all content. 
+                Changes take effect when the user refreshes their page.
+              </p>
             </div>
 
             {user && (

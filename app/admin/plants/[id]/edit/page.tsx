@@ -5,11 +5,9 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { Loading } from "@/components/loading";
-import { ErrorDisplay } from "@/components/error-display";
+import { ImageUploadCrop } from "@/components/image-upload-crop";
 import Link from "next/link";
-import Image from "next/image";
 import { FiArrowLeft, FiAlertCircle, FiCheckCircle, FiSave } from "react-icons/fi";
-import { GiPlantRoots } from "react-icons/gi";
 import { motion } from "framer-motion";
 
 export default function EditPlantPage() {
@@ -23,7 +21,7 @@ export default function EditPlantPage() {
   const [waterAmount, setWaterAmount] = useState("");
   const [waterSchedule, setWaterSchedule] = useState("");
   const [careNotes, setCareNotes] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -56,10 +54,7 @@ export default function EditPlantPage() {
         setWaterAmount(plant.waterAmount || "");
         setWaterSchedule(plant.waterSchedule || "");
         setCareNotes(plant.careNotes || "");
-        
-        if (plant.imageUrl) {
-          setImagePreview(plant.imageUrl);
-        }
+        setImageUrl(plant.imageUrl || "");
       } catch (err: any) {
         console.error("Error fetching plant:", err);
         setError(err.message || "An error occurred while fetching plant data");
@@ -83,9 +78,6 @@ export default function EditPlantPage() {
       setSubmitting(false);
       return;
     }
-
-    // 使用静态SVG图标或现有图片
-    const imageUrl = imagePreview || "/images/plant-placeholder.svg";
 
     const plantData = {
       name: name.trim(),
@@ -278,25 +270,14 @@ export default function EditPlantPage() {
                   <label className="text-sm font-medium leading-none">
                     Plant Image
                   </label>
-                  <div className="border-2 border-dashed rounded-md p-6 text-center">
-                    {imagePreview ? (
-                      <div className="relative h-48 mx-auto">
-                        <Image
-                          src={imagePreview}
-                          alt="Plant image"
-                          fill
-                          className="object-contain"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex justify-center items-center">
-                        <GiPlantRoots className="h-16 w-16 text-primary opacity-70" />
-                      </div>
-                    )}
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {imagePreview ? "Current plant image will be used" : "Default plant icon will be used"}
-                    </p>
-                  </div>
+                  <ImageUploadCrop
+                    value={imageUrl}
+                    onChange={setImageUrl}
+                    aspectRatio={4 / 3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload a photo of your plant. You can crop and rotate it before saving.
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-end gap-4">

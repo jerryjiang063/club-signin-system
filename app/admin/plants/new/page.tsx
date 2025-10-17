@@ -5,9 +5,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { Loading } from "@/components/loading";
+import { ImageUploadCrop } from "@/components/image-upload-crop";
 import Link from "next/link";
 import { FiArrowLeft, FiAlertCircle, FiCheckCircle } from "react-icons/fi";
-import { GiPlantRoots } from "react-icons/gi";
 import { motion } from "framer-motion";
 
 export default function NewPlantPage() {
@@ -18,6 +18,7 @@ export default function NewPlantPage() {
   const [waterAmount, setWaterAmount] = useState("");
   const [waterSchedule, setWaterSchedule] = useState("");
   const [careNotes, setCareNotes] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -49,9 +50,6 @@ export default function NewPlantPage() {
       setSubmitting(false);
       return;
     }
-
-    // 使用静态SVG图标作为默认图片
-    const imageUrl = "/images/plant-placeholder.svg";
 
     const plantData = {
       name: name.trim(),
@@ -95,6 +93,7 @@ export default function NewPlantPage() {
       setWaterAmount("");
       setWaterSchedule("");
       setCareNotes("");
+      setImageUrl("");
       
       // 成功后3秒跳转到植物列表页
       setTimeout(() => {
@@ -251,14 +250,14 @@ export default function NewPlantPage() {
                   <label className="text-sm font-medium leading-none">
                     Plant Image
                   </label>
-                  <div className="border-2 border-dashed rounded-md p-6 text-center">
-                    <div className="flex justify-center items-center">
-                      <GiPlantRoots className="h-16 w-16 text-primary opacity-70" />
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Default plant icon will be used
-                    </p>
-                  </div>
+                  <ImageUploadCrop
+                    value={imageUrl}
+                    onChange={setImageUrl}
+                    aspectRatio={4 / 3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload a photo of your plant. You can crop and rotate it before saving.
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-end gap-4">

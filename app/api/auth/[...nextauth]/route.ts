@@ -46,17 +46,35 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
       }
+      
+      // 每次请求都从数据库获取最新的role
+      // 这样管理员修改role后，用户下次请求就能看到更新
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, name: true, email: true }
+        });
+        
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+        }
+      }
+      
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
       }
       return session;
     },
