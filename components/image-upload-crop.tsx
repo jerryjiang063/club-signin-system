@@ -73,38 +73,64 @@ export function ImageUploadCrop({ value, onChange, aspectRatio = 4 / 3 }: ImageU
     rotation = 0
   ): Promise<string> => {
     const image = await createImage(imageSrc);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+    
+    // Create a temporary canvas for rotation
+    const maxSize = Math.max(image.width, image.height);
+    const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+    
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = safeArea;
+    tempCanvas.height = safeArea;
+    const tempCtx = tempCanvas.getContext("2d");
 
-    if (!ctx) {
+    if (!tempCtx) {
       throw new Error("No 2d context");
     }
 
-    const maxSize = Math.max(image.width, image.height);
-    const safeArea = 2 * ((maxSize / 2) * Math.sqrt(2));
+    // Fill with white background to avoid black borders
+    tempCtx.fillStyle = "#FFFFFF";
+    tempCtx.fillRect(0, 0, safeArea, safeArea);
 
-    canvas.width = safeArea;
-    canvas.height = safeArea;
+    // Apply rotation and draw image
+    tempCtx.translate(safeArea / 2, safeArea / 2);
+    tempCtx.rotate((rotation * Math.PI) / 180);
+    tempCtx.translate(-safeArea / 2, -safeArea / 2);
 
-    ctx.translate(safeArea / 2, safeArea / 2);
-    ctx.rotate((rotation * Math.PI) / 180);
-    ctx.translate(-safeArea / 2, -safeArea / 2);
-
-    ctx.drawImage(
+    tempCtx.drawImage(
       image,
       safeArea / 2 - image.width * 0.5,
       safeArea / 2 - image.height * 0.5
     );
 
-    const data = ctx.getImageData(0, 0, safeArea, safeArea);
+    // Create final canvas with crop dimensions
+    const finalCanvas = document.createElement("canvas");
+    finalCanvas.width = pixelCrop.width;
+    finalCanvas.height = pixelCrop.height;
+    const finalCtx = finalCanvas.getContext("2d");
 
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    if (!finalCtx) {
+      throw new Error("No 2d context");
+    }
 
-    ctx.putImageData(
-      data,
-      Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
-      Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
+    // Fill with white background
+    finalCtx.fillStyle = "#FFFFFF";
+    finalCtx.fillRect(0, 0, pixelCrop.width, pixelCrop.height);
+
+    // Calculate source coordinates in the rotated canvas
+    const sourceX = safeArea / 2 - image.width * 0.5 + pixelCrop.x;
+    const sourceY = safeArea / 2 - image.height * 0.5 + pixelCrop.y;
+
+    // Draw the cropped portion from temp canvas to final canvas
+    finalCtx.drawImage(
+      tempCanvas,
+      sourceX,
+      sourceY,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
     );
 
     // 限制最大尺寸为 1200px，保持宽高比
@@ -124,12 +150,15 @@ export function ImageUploadCrop({ value, onChange, aspectRatio = 4 / 3 }: ImageU
       const resizeCtx = resizeCanvas.getContext("2d");
       
       if (resizeCtx) {
-        resizeCtx.drawImage(canvas, 0, 0, finalWidth, finalHeight);
+        // Fill with white background
+        resizeCtx.fillStyle = "#FFFFFF";
+        resizeCtx.fillRect(0, 0, finalWidth, finalHeight);
+        resizeCtx.drawImage(finalCanvas, 0, 0, finalWidth, finalHeight);
         return resizeCanvas.toDataURL("image/jpeg", 0.85);
       }
     }
 
-    return canvas.toDataURL("image/jpeg", 0.85);
+    return finalCanvas.toDataURL("image/jpeg", 0.85);
   };
 
   const handleCropConfirm = async () => {

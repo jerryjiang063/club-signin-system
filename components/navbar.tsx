@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { FiHome, FiCalendar, FiUser, FiSettings, FiLogOut } from "react-icons/fi";
+import { FiHome, FiCalendar, FiUser, FiSettings, FiLogOut, FiClock } from "react-icons/fi";
 import { GiPlantRoots } from "react-icons/gi";
 import { signOut, useSession } from "next-auth/react";
 import { useState } from "react";
@@ -53,6 +53,12 @@ export function Navbar() {
       href: "/plants",
       label: "Plants",
       icon: <GiPlantRoots className="h-5 w-5" />,
+      showAlways: true,
+    },
+    {
+      href: "/activity",
+      label: "Recent Activity",
+      icon: <FiClock className="h-5 w-5" />,
       showAlways: true,
     },
     {

@@ -75,6 +75,9 @@ export default function Home() {
               <Link href="/plants" className="btn-outline">
                 Explore Plants
               </Link>
+              <Link href="/activity" className="btn-outline">
+                Recent Activity
+              </Link>
             </div>
           </FadeIn>
           <FadeIn className="flex-1" delay={0.2}>
