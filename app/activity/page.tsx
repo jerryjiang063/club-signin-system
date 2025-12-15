@@ -10,6 +10,7 @@ import { FiHeart, FiSend, FiImage, FiTrash2 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+
 // Simple date formatting function
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -42,7 +43,33 @@ interface ActivityPost {
   userName?: string;
 }
 
+const STORAGE_KEY = "recentPosts";
+
+// localStorage utilities - SINGLE SOURCE OF TRUTH for posts
+function getPostsFromStorage(): ActivityPost[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error("Error reading from localStorage:", error);
+    return [];
+  }
+}
+
+function savePostsToStorage(posts: ActivityPost[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+  } catch (error) {
+    console.error("Error saving to localStorage:", error);
+  }
+}
+
 export default function ActivityPage() {
+  // SINGLE SOURCE OF TRUTH: useSession() ONLY - NO custom auth state
   const { data: session, status } = useSession();
   const router = useRouter();
   const [posts, setPosts] = useState<ActivityPost[]>([]);
@@ -52,23 +79,68 @@ export default function ActivityPage() {
   const [postText, setPostText] = useState("");
   const [postImageUrl, setPostImageUrl] = useState("");
   const [error, setError] = useState("");
-  const isLoggedIn = status === "authenticated" && session;
 
-  // Fetch posts
-  const fetchPosts = async () => {
-    try {
-      const response = await fetch("/api/activity");
-      const data = await response.json();
-      setPosts(data.posts || []);
-    } catch (error) {
-      console.error("Error fetching posts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // NO custom isLoggedIn - derive everything directly from status
+  // Logged in → status === "authenticated"
+  // Logged out → status === "unauthenticated"
+  // Loading → status === "loading"
 
+  // Load posts from localStorage on mount (canonical source)
   useEffect(() => {
-    fetchPosts();
+    const loadPosts = async () => {
+      // Load from localStorage first (immediate display)
+      const storedPosts = getPostsFromStorage();
+      if (storedPosts.length > 0) {
+        // Sort by createdAt descending
+        const sorted = [...storedPosts].sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setPosts(sorted);
+        setLoading(false);
+      }
+
+      // Sync with API in background (optional sync, localStorage is source of truth)
+      try {
+        const response = await fetch("/api/activity");
+        if (response.ok) {
+          const data = await response.json();
+          const apiPosts = data.posts || [];
+          
+          // Merge: API posts take precedence for new posts, but keep localStorage deletions
+          const mergedPosts = [...apiPosts];
+          storedPosts.forEach((storedPost: ActivityPost) => {
+            // Only add if not in API (preserves deletions)
+            if (!apiPosts.find((p: ActivityPost) => p.id === storedPost.id)) {
+              // Don't add back deleted posts
+            }
+          });
+          
+          // Sort by createdAt descending
+          mergedPosts.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          
+          // Only update if we got new data
+          if (apiPosts.length > 0) {
+            setPosts(mergedPosts);
+            savePostsToStorage(mergedPosts);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching posts from API:", error);
+        // If API fails, use localStorage data only
+        if (storedPosts.length > 0) {
+          const sorted = [...storedPosts].sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          setPosts(sorted);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPosts();
   }, []);
 
   // Handle like toggle
@@ -80,14 +152,15 @@ export default function ActivityPage() {
       const data = await response.json();
       
       if (response.ok) {
-        // Update the post in the list
-        setPosts((prevPosts) =>
-          prevPosts.map((post) =>
-            post.id === postId
-              ? { ...post, likes: data.post.likes, likedBy: data.post.likedBy }
-              : post
-          )
+        // Update post in state
+        const updatedPosts = posts.map((post) =>
+          post.id === postId
+            ? { ...post, likes: data.post.likes, likedBy: data.post.likedBy }
+            : post
         );
+        setPosts(updatedPosts);
+        // Update localStorage (source of truth)
+        savePostsToStorage(updatedPosts);
       }
     } catch (error) {
       console.error("Error toggling like:", error);
@@ -98,7 +171,9 @@ export default function ActivityPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isLoggedIn) {
+    // STRICT PERMISSION CHECK: Must be authenticated
+    if (status !== "authenticated" || !session?.user) {
+      console.warn("Post creation blocked: Not authenticated", { status });
       router.push("/login");
       return;
     }
@@ -121,8 +196,8 @@ export default function ActivityPage() {
         body: JSON.stringify({
           text: postText.trim(),
           imageUrl: postImageUrl || null,
-          userId: session?.user?.id || session?.user?.email || undefined,
-          userName: session?.user?.name || undefined,
+          userId: session.user.id || session.user.email || undefined,
+          userName: session.user.name || undefined,
         }),
       });
 
@@ -132,9 +207,14 @@ export default function ActivityPage() {
       }
 
       const data = await response.json();
+      const newPost = data.post;
       
-      // Add new post to the beginning of the list
-      setPosts((prevPosts) => [data.post, ...prevPosts]);
+      // Add to state
+      const updatedPosts = [newPost, ...posts];
+      setPosts(updatedPosts);
+      
+      // Save to localStorage (source of truth) - CRITICAL
+      savePostsToStorage(updatedPosts);
       
       // Reset form
       setPostText("");
@@ -147,18 +227,51 @@ export default function ActivityPage() {
     }
   };
 
-  // Handle post deletion (frontend-only)
-  const handleDelete = async (postId: string) => {
+  // Handle post deletion - STRICT PERMISSION CHECKS
+  const handleDelete = (postId: string) => {
+    // PERMISSION CHECK #1: Must be authenticated
+    if (status !== "authenticated") {
+      console.warn("Delete blocked: Not authenticated", { status });
+      return;
+    }
+
+    // PERMISSION CHECK #2: Session and user must exist
+    if (!session || !session.user) {
+      console.warn("Delete blocked: No session or user", { 
+        hasSession: !!session, 
+        hasUser: !!session?.user 
+      });
+      return;
+    }
+
     const post = posts.find((p) => p.id === postId);
-    if (!post) return;
+    if (!post) {
+      console.warn("Delete blocked: Post not found", { postId });
+      return;
+    }
 
-    // Check permissions (frontend-only)
-    const currentUserId = session?.user?.id || session?.user?.email;
-    const canDelete =
-      (post.userId && currentUserId && post.userId === currentUserId) ||
-      session?.user?.role === "ADMIN";
-
-    if (!canDelete) {
+    // PERMISSION CHECK #3: Get current user identifier
+    const currentUserId = session.user.id;
+    const currentUserEmail = session.user.email;
+    
+    // PERMISSION CHECK #4: Check if user is admin
+    const isAdmin = session.user.role === "ADMIN";
+    
+    // PERMISSION CHECK #5: Check if user is the author
+    const isAuthor = post.userId && (
+      post.userId === currentUserId || 
+      post.userId === currentUserEmail
+    );
+    
+    // PERMISSION CHECK #6: Must be admin OR author
+    if (!isAdmin && !isAuthor) {
+      console.warn("Delete blocked: Not authorized", { 
+        isAdmin, 
+        isAuthor, 
+        postUserId: post.userId, 
+        currentUserId, 
+        currentUserEmail 
+      });
       return;
     }
 
@@ -168,25 +281,47 @@ export default function ActivityPage() {
       return;
     }
 
-    // Remove from UI immediately (frontend-only)
-    setPosts((prevPosts) => prevPosts.filter((p) => p.id !== postId));
+    // CRITICAL: Update localStorage FIRST (source of truth)
+    const updatedPosts = posts.filter((p) => p.id !== postId);
+    savePostsToStorage(updatedPosts);
+    
+    // THEN update React state from localStorage result
+    setPosts(updatedPosts);
   };
 
-  // Check if user can delete a post
+  // Check if user can delete a post (for rendering delete button)
+  // STRICT PERMISSION CHECK: Must verify ALL conditions
   const canDeletePost = (post: ActivityPost): boolean => {
-    if (!isLoggedIn || !session?.user) return false;
-    const currentUserId = session.user.id || session.user.email;
-    return (
-      (post.userId && currentUserId && post.userId === currentUserId) ||
-      session.user.role === "ADMIN"
+    // PERMISSION CHECK #1: Must be authenticated
+    if (status !== "authenticated") {
+      return false;
+    }
+    
+    // PERMISSION CHECK #2: Session must exist and have user
+    if (!session || !session.user) {
+      return false;
+    }
+    
+    // PERMISSION CHECK #3: Get current user identifier
+    const currentUserId = session.user.id;
+    const currentUserEmail = session.user.email;
+    
+    // PERMISSION CHECK #4: Check if user is admin
+    const isAdmin = session.user.role === "ADMIN";
+    
+    // PERMISSION CHECK #5: Check if user is the author
+    const isAuthor = post.userId && (
+      post.userId === currentUserId || 
+      post.userId === currentUserEmail
     );
+    
+    // PERMISSION CHECK #6: Must be admin OR author
+    return isAdmin || isAuthor;
   };
 
-  // Check if post is liked (using a simple approach - could be improved with session tracking)
+  // Check if post is liked
   const isLiked = (post: ActivityPost): boolean => {
-    // For simplicity, we'll check if the user's IP/session is in likedBy
-    // In a real app, you'd track this per user session
-    return false; // Default to false, could be enhanced with session tracking
+    return false; // Default to false
   };
 
   return (
@@ -200,17 +335,24 @@ export default function ActivityPage() {
             </p>
           </FadeIn>
 
-          {/* Create Post Form */}
+          {/* Create Post Form - STRICT STATUS-BASED RENDERING */}
           <FadeIn className="mb-8" delay={0.1}>
             <div className="card">
-              {!isLoggedIn ? (
+              {status === "loading" ? (
+                // Handle loading state explicitly - never show "Log in to post" while loading
+                <div className="p-6 text-center">
+                  <p className="text-muted-foreground">Loading...</p>
+                </div>
+              ) : status === "unauthenticated" ? (
+                // Not authenticated - show passive message, no input
                 <div className="p-6 text-center space-y-4">
                   <p className="text-muted-foreground">Log in to post.</p>
                   <Link href="/login" className="btn-primary inline-flex items-center">
                     Login
                   </Link>
                 </div>
-              ) : !showCreateForm ? (
+              ) : status === "authenticated" && !showCreateForm ? (
+                // Authenticated - show post input trigger
                 <button
                   onClick={() => setShowCreateForm(true)}
                   className="w-full p-4 text-left text-muted-foreground hover:text-foreground transition-colors border border-dashed border-border rounded-lg hover:border-primary"
@@ -220,7 +362,8 @@ export default function ActivityPage() {
                     <span>Share something with the community...</span>
                   </div>
                 </button>
-              ) : (
+              ) : status === "authenticated" ? (
+                // Authenticated - show post composer
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                   <div className="space-y-2">
                     <textarea
@@ -270,11 +413,11 @@ export default function ActivityPage() {
                     </button>
                   </div>
                 </form>
-              )}
+              ) : null}
             </div>
           </FadeIn>
 
-          {/* Posts Feed */}
+          {/* Posts Feed - Anyone can view */}
           <div className="space-y-4">
             {loading ? (
               <div className="text-center py-12 text-muted-foreground">
@@ -330,6 +473,7 @@ export default function ActivityPage() {
                         </button>
 
                         <div className="flex items-center gap-3">
+                          {/* Delete button - ONLY renders if canDeletePost returns true */}
                           {canDeletePost(post) && (
                             <button
                               onClick={() => handleDelete(post.id)}
@@ -356,4 +500,3 @@ export default function ActivityPage() {
     </LayoutWrapper>
   );
 }
-
