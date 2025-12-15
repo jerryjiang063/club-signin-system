@@ -82,3 +82,16 @@ model SiteContent {
   imageUrl      String?
   updatedAt     DateTime  @updatedAt
 }
+
+// Recent Activity 帖子模型
+model ActivityPost {
+  id            String    @id @default(cuid())
+  text          String
+  imageUrl      String?
+  likes         Int       @default(0)
+  likedBy       String    @default("[]") // JSON array of user IDs
+  userId        String?   // Author user ID
+  userName      String?   // Author user name
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

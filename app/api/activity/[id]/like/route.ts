@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readActivity, writeActivity, getLikeIdentifier } from '@/lib/activity-storage';
+import { getServerSession } from 'next-auth/next';
+import prisma from '@/lib/prisma';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Toggle like on a post
 export async function POST(
@@ -7,38 +9,62 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    // PERMISSION CHECK: Must be authenticated
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Must be logged in to like posts' },
+        { status: 401 }
+      );
+    }
+
     const postId = params.id;
-    const identifier = getLikeIdentifier(req);
+    const userId = session.user.id;
 
-    // Read existing posts
-    const posts = await readActivity();
-    const postIndex = posts.findIndex(p => p.id === postId);
+    // Find the post
+    const post = await prisma.activityPost.findUnique({
+      where: { id: postId }
+    });
 
-    if (postIndex === -1) {
+    if (!post) {
       return NextResponse.json(
         { error: 'Post not found' },
         { status: 404 }
       );
     }
 
-    const post = posts[postIndex];
-    const isLiked = post.likedBy.includes(identifier);
+    // Parse likedBy array
+    const likedBy: string[] = post.likedBy ? JSON.parse(post.likedBy) : [];
+    const isLiked = likedBy.includes(userId);
+
+    let updatedLikedBy: string[];
+    let newLikes: number;
 
     if (isLiked) {
-      // Unlike: remove identifier and decrement
-      post.likedBy = post.likedBy.filter(id => id !== identifier);
-      post.likes = Math.max(0, post.likes - 1);
+      // Unlike: remove userId and decrement
+      updatedLikedBy = likedBy.filter(id => id !== userId);
+      newLikes = Math.max(0, post.likes - 1);
     } else {
-      // Like: add identifier and increment
-      post.likedBy.push(identifier);
-      post.likes = post.likes + 1;
+      // Like: add userId and increment
+      updatedLikedBy = [...likedBy, userId];
+      newLikes = post.likes + 1;
     }
 
-    // Write back to file
-    await writeActivity(posts);
+    // Update in database
+    const updatedPost = await prisma.activityPost.update({
+      where: { id: postId },
+      data: {
+        likes: newLikes,
+        likedBy: JSON.stringify(updatedLikedBy),
+      }
+    });
 
     return NextResponse.json({
-      post,
+      post: {
+        ...updatedPost,
+        likedBy: updatedLikedBy,
+        createdAt: updatedPost.createdAt.toISOString(),
+      },
       liked: !isLiked,
     });
   } catch (error) {

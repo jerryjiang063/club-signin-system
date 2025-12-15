@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readActivity, writeActivity, getLikeIdentifier, ActivityPost } from '@/lib/activity-storage';
+import { getServerSession } from 'next-auth/next';
+import prisma from '@/lib/prisma';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Get all activity posts (newest first)
 export async function GET() {
   try {
-    const posts = await readActivity();
-    // Sort by createdAt descending (newest first)
-    const sortedPosts = posts.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    return NextResponse.json({ posts: sortedPosts });
+    const posts = await prisma.activityPost.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    // Parse likedBy JSON strings to arrays
+    const postsWithParsedLikes = posts.map(post => ({
+      ...post,
+      likedBy: post.likedBy ? JSON.parse(post.likedBy) : [],
+      createdAt: post.createdAt.toISOString(),
+    }));
+    
+    return NextResponse.json({ posts: postsWithParsedLikes });
   } catch (error) {
     console.error('Error fetching activity:', error);
     return NextResponse.json(
@@ -19,11 +27,20 @@ export async function GET() {
   }
 }
 
-// Create a new activity post
+// Create a new activity post (authenticated users only)
 export async function POST(req: NextRequest) {
   try {
+    // PERMISSION CHECK: Must be authenticated
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Must be logged in to post' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
-    const { text, imageUrl, userId, userName } = body;
+    const { text, imageUrl } = body;
 
     // Validate required fields
     if (!text || !text.trim()) {
@@ -33,29 +50,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Read existing posts
-    const posts = await readActivity();
-
-    // Create new post
-    const newPost: ActivityPost = {
-      id: `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      text: text.trim(),
-      imageUrl: imageUrl || null,
-      likes: 0,
-      likedBy: [],
-      createdAt: new Date().toISOString(),
-      userId: userId || undefined,
-      userName: userName || undefined,
-    };
-
-    // Add to beginning of array (will be sorted by GET)
-    posts.push(newPost);
-
-    // Write back to file
-    await writeActivity(posts);
+    // Create new post in database
+    const newPost = await prisma.activityPost.create({
+      data: {
+        text: text.trim(),
+        imageUrl: imageUrl || null,
+        likes: 0,
+        likedBy: "[]",
+        userId: session.user.id,
+        userName: session.user.name || undefined,
+      }
+    });
 
     return NextResponse.json(
-      { post: newPost },
+      { 
+        post: {
+          ...newPost,
+          likedBy: [],
+          createdAt: newPost.createdAt.toISOString(),
+        }
+      },
       { status: 201 }
     );
   } catch (error) {
@@ -66,5 +80,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-
