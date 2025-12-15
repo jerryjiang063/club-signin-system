@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { LayoutWrapper } from "@/components/layout-wrapper";
 import { FadeIn } from "@/components/animations";
 import { ImageUploadCrop } from "@/components/image-upload-crop";
-import { FiHeart, FiSend, FiImage } from "react-icons/fi";
+import { FiHeart, FiSend, FiImage, FiTrash2 } from "react-icons/fi";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 // Simple date formatting function
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -35,9 +38,13 @@ interface ActivityPost {
   likes: number;
   likedBy: string[];
   createdAt: string;
+  userId?: string;
+  userName?: string;
 }
 
 export default function ActivityPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [posts, setPosts] = useState<ActivityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +52,7 @@ export default function ActivityPage() {
   const [postText, setPostText] = useState("");
   const [postImageUrl, setPostImageUrl] = useState("");
   const [error, setError] = useState("");
+  const isLoggedIn = status === "authenticated" && session;
 
   // Fetch posts
   const fetchPosts = async () => {
@@ -89,6 +97,12 @@ export default function ActivityPage() {
   // Handle post creation
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
 
@@ -107,6 +121,8 @@ export default function ActivityPage() {
         body: JSON.stringify({
           text: postText.trim(),
           imageUrl: postImageUrl || null,
+          userId: session?.user?.id || session?.user?.email || undefined,
+          userName: session?.user?.name || undefined,
         }),
       });
 
@@ -131,6 +147,41 @@ export default function ActivityPage() {
     }
   };
 
+  // Handle post deletion (frontend-only)
+  const handleDelete = async (postId: string) => {
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+
+    // Check permissions (frontend-only)
+    const currentUserId = session?.user?.id || session?.user?.email;
+    const canDelete =
+      (post.userId && currentUserId && post.userId === currentUserId) ||
+      session?.user?.role === "ADMIN";
+
+    if (!canDelete) {
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = window.confirm("Delete this post? This action cannot be undone.");
+    if (!confirmed) {
+      return;
+    }
+
+    // Remove from UI immediately (frontend-only)
+    setPosts((prevPosts) => prevPosts.filter((p) => p.id !== postId));
+  };
+
+  // Check if user can delete a post
+  const canDeletePost = (post: ActivityPost): boolean => {
+    if (!isLoggedIn || !session?.user) return false;
+    const currentUserId = session.user.id || session.user.email;
+    return (
+      (post.userId && currentUserId && post.userId === currentUserId) ||
+      session.user.role === "ADMIN"
+    );
+  };
+
   // Check if post is liked (using a simple approach - could be improved with session tracking)
   const isLiked = (post: ActivityPost): boolean => {
     // For simplicity, we'll check if the user's IP/session is in likedBy
@@ -152,7 +203,14 @@ export default function ActivityPage() {
           {/* Create Post Form */}
           <FadeIn className="mb-8" delay={0.1}>
             <div className="card">
-              {!showCreateForm ? (
+              {!isLoggedIn ? (
+                <div className="p-6 text-center space-y-4">
+                  <p className="text-muted-foreground">Log in to post.</p>
+                  <Link href="/login" className="btn-primary inline-flex items-center">
+                    Login
+                  </Link>
+                </div>
+              ) : !showCreateForm ? (
                 <button
                   onClick={() => setShowCreateForm(true)}
                   className="w-full p-4 text-left text-muted-foreground hover:text-foreground transition-colors border border-dashed border-border rounded-lg hover:border-primary"
@@ -271,9 +329,21 @@ export default function ActivityPage() {
                           <span className="text-sm font-medium">{post.likes}</span>
                         </button>
 
-                        <span className="text-xs text-muted-foreground">
-                          {formatTimeAgo(post.createdAt)}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          {canDeletePost(post) && (
+                            <button
+                              onClick={() => handleDelete(post.id)}
+                              className="text-muted-foreground hover:text-red-600 transition-colors p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20"
+                              title="Delete post"
+                              aria-label="Delete post"
+                            >
+                              <FiTrash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {formatTimeAgo(post.createdAt)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>

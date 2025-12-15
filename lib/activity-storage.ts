@@ -8,6 +8,8 @@ export interface ActivityPost {
   likes: number;
   likedBy: string[]; // Array of IP addresses or session IDs
   createdAt: string;
+  userId?: string; // User ID of the post author (optional for backward compatibility)
+  userName?: string; // User name of the post author (optional for backward compatibility)
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -63,4 +65,5 @@ export function getLikeIdentifier(req: Request): string {
               'anonymous';
   return ip;
 }
+
 

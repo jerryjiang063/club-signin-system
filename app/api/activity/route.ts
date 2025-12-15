@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { text, imageUrl } = body;
+    const { text, imageUrl, userId, userName } = body;
 
     // Validate required fields
     if (!text || !text.trim()) {
@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
       likes: 0,
       likedBy: [],
       createdAt: new Date().toISOString(),
+      userId: userId || undefined,
+      userName: userName || undefined,
     };
 
     // Add to beginning of array (will be sorted by GET)
@@ -64,4 +66,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
 
